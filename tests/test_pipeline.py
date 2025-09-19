@@ -1,9 +1,8 @@
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import polars as pl
-from main import transform
+from pipeline.pipeline import transform
 from polars.testing import assert_frame_equal
 
 

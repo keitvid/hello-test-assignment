@@ -4,7 +4,7 @@ from collections import namedtuple
 import logging
 
 
-from config import RESULTS_DIR
+from pipeline.config import RESULTS_DIR
 
 
 logger = logging.getLogger(__name__)
