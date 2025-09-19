@@ -1,8 +1,5 @@
-import sys
-import os
-
 import polars as pl
-from pipeline.pipeline import transform
+from pipeline.transform import transform
 from polars.testing import assert_frame_equal
 
 
