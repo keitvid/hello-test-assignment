@@ -1,7 +1,6 @@
 import fire
 import logging
 from rich.logging import RichHandler
-from enum import Enum
 
 from pipeline.transform import run_pipeline
 
@@ -9,7 +8,12 @@ logging.basicConfig(level="INFO", format="%(message)s", datefmt="[%X]", handlers
 logger = logging.getLogger(__name__)
 
 
-def main(claims: str, pharmacies: str, reverts: str, incremental: bool=False, loglevel: str="INFO") -> None:
+def main(
+    claims: str="data/claims",
+    pharmacies: str="data/pharmacies",
+    reverts: str="data/reverts",
+    incremental: bool=False,
+    loglevel: str="INFO") -> None:
     """
     Claim events processing pipeline.
 

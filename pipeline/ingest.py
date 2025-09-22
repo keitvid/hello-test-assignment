@@ -3,7 +3,7 @@ import os
 import logging
 from collections import namedtuple
 
-from pipeline.config import RESULTS_DIR, STAGING_DIR
+from pipeline.config import STAGING_DIR, SOURCES
 
 
 SourceData = namedtuple('SourceData', ['claims', 'pharmacies', 'reverts'])
@@ -12,7 +12,13 @@ SourceData = namedtuple('SourceData', ['claims', 'pharmacies', 'reverts'])
 logger = logging.getLogger(__name__)
 
 
-def read_file(path: str, format: str, schema: dict, filter_nulls = True):
+def read_file(path: str, format: str, schema: dict, filter_nulls = True) -> pl.DataFrame:
+    """
+    Read a single file from the specified path.
+
+    Returns:
+        pl.DataFrame: DataFrame with file data
+    """
     if format == "csv":
         df = pl.read_csv(path, schema=schema)
     elif format == "json":
@@ -28,7 +34,10 @@ def read_file(path: str, format: str, schema: dict, filter_nulls = True):
 
 def ingest_source(folder: str, format: str, schema: dict, filter_nulls: bool = True) -> pl.DataFrame:
     """
-    Ingest files from the specified folder.
+    Ingest all files from the specified folder.
+
+    Returns:
+        pl.DataFrame: DataFrame with source data
     """
     if not os.path.exists(folder):
         raise FileNotFoundError(f"Folder not found: {folder}")
@@ -36,7 +45,7 @@ def ingest_source(folder: str, format: str, schema: dict, filter_nulls: bool = T
     files = os.listdir(folder)
     dfs = []
     for file in files:
-        df = read_file(os.path.join(folder, file), format=format, schema=schema)
+        df = read_file(os.path.join(folder, file), format=format, schema=schema, filter_nulls=filter_nulls)
         dfs.append(df)
 
     return pl.concat(dfs)
@@ -47,9 +56,14 @@ def ingest_claims(
     format: str,
     schema: dict,
     pharmacies_df,
-    incremental: bool):
+    incremental: bool) -> pl.LazyFrame:
     """
-    Ingest files from the specified folder.
+    Ingest claims files from the specified folder.
+    Claims, as a main events source, can be ingested in two modes: full and incremental
+    In order to reduce processing resources, claims are ingested in parquet format.
+
+    Returns:
+        pl.LazyFrame: LazyFrame with claims data
     """
     if not os.path.exists(folder):
         raise FileNotFoundError(f"Folder not found: {folder}")
@@ -74,3 +88,37 @@ def ingest_claims(
         filtered_claims_df = raw_claims_df.filter(pl.col("npi").is_in(pharmacies_df["npi"].implode()))
         filtered_claims_df.write_parquet(f'{STAGING_DIR}/{os.path.splitext(file)[0]}.parquet')
 
+    return pl.scan_parquet(STAGING_DIR)
+
+def ingest(
+    claims: str,
+    pharmacies: str,
+    reverts: str,
+    incremental: bool
+    ) -> SourceData:
+    """
+    Ingest source data from the specified folders.
+    
+    Parameters:
+        claims (str):
+            Path to claims data folder. Contains json files with main claim events. 
+        pharmacies (str):
+            Path to pharmacies data folder. Contains csv files with chain->npi mapping for pharmacies.
+        reverts (str):
+            Path to reverts data folder. Contains json files with revert events.
+
+    Returns:
+        SourceData: Named tuple with source lazyframes
+    """
+    pharmacies_df = ingest_source(pharmacies, format=SOURCES["pharmacies"]["format"], schema=SOURCES["pharmacies"]["schema"])
+    reverts_df = ingest_source(reverts, format=SOURCES["reverts"]["format"], schema=SOURCES["reverts"]["schema"])
+
+    claims_lf = ingest_claims(
+        claims,
+        SOURCES["claims"]["format"],
+        SOURCES["claims"]["schema"],
+        pharmacies_df,
+        incremental
+    )
+
+    return SourceData(claims_lf, pharmacies_df.lazy(), reverts_df.lazy()) 

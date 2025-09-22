@@ -1,6 +1,6 @@
 # Pharmacy Events Processing Pipeline
 
-A data processing pipeline for analyzing pharmacy claims, reverts, and pharmacy chain data using Polars.
+A data processing pipeline for analyzing pharmacy claims, reverts, and pharmacy chain data.
 
 ## Install
 
@@ -19,7 +19,7 @@ In full mode, the pipeline will clean up staging folder and process all files in
 This mode is useful for the first run or when you want to reprocess all data.
 
 ```bash
-python main.py --claims="path/to/claims" --pharmacies="path/to/pharmacies" --reverts="path/to/reverts"
+python main.py --claims="data/claims" --pharmacies="data/pharmacies" --reverts="data/reverts"
 ```
 
 2. Run the pipeline in incremental mode:
@@ -28,10 +28,10 @@ In incremental mode, the pipeline will only process new files in the claims fold
 This mode is useful for when you want to process only new data.
 
 ```bash
-python main.py --claims="path/to/claims" --pharmacies="path/to/pharmacies" --reverts="path/to/reverts" --incremental
+python main.py --claims="data/claims" --pharmacies="data/pharmacies" --reverts="data/reverts" --incremental
 ```
 
-### Output
+## Output
 
 The pipeline generates three JSON files in the `results/` folder:
 

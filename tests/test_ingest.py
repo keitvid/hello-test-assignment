@@ -33,7 +33,6 @@ def test_ingest_claims():
             "timestamp": ["2024-01-01T00:00:00", "2024-01-01T00:00:00"]
     }, schema=CLAIMS_SCHEMA)
 
-    print(source_data.claims.collect())
     assert_frame_equal(source_data.claims.collect(), expected_df)
 
 
